@@ -1,0 +1,50 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: 859e26ef-2e7b-4ffc-b539-bb5ecc594a3b
+  loglevel: INFO
+  name: clone_terraform_guides
+  nodeFilterEditable: false
+  options:
+  - name: AWSacesskey
+    required: true
+  - name: AWSsecret
+    required: true
+  - name: TFEorg
+  - name: TFEtoken
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: git clone https://github.com/hashicorp/terraform-guides.git
+      script: |-
+        #!/bin/bash
+        if [ -d /tmp/rundeck/hold ]; then
+          rm -Rf /tmp/rundeck/hold
+        fi
+        git clone https://github.com/hashicorp/terraform-guides.git /tmp/rundeck/hold
+    - description: Write out variables.csv file
+      script: |-
+        #!/bin/bash
+        cat << EOF > /tmp/rundeck/hold/operations/automation-script/variables.csv
+        name,Scott,terraform,false,false
+        CONFIRM_DESTROY,1,env,false,false
+        TF_CLI_ARGS,-no-color,env,false,false
+        AWS_ACCESS_KEY_ID,$RD_OPTION_AWSACESSKEY,env,false,true
+        AWS_SECRET_ACCESS_KEY,$RD_OPTION_AWSSECRET,env,false,true
+        AWS_DEFAULT_REGION,us-west-2,env,false,false
+        EOF
+    - description: Load eksterra repository and push it to TFE
+      script: |-
+        #!/bin/bash
+        export TFE_TOKEN=$RD_OPTION_TFETOKEN
+        export TFE_ORG=$RD_OPTION_TFEORG
+        cd /tmp/rundeck/hold/operations/automation-script/
+        sed -i.bak s/'0.11.14'/'0.13.2'/g loadAndRunWorkspace.sh
+        ./loadAndRunWorkspace.sh https://github.com/smpnet74/eksterra scottsrun yes
+    keepgoing: false
+    strategy: node-first
+  uuid: 859e26ef-2e7b-4ffc-b539-bb5ecc594a3b
+
