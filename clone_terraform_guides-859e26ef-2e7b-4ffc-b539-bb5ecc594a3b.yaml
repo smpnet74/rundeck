@@ -11,6 +11,7 @@
   - name: AWSsecret
     required: true
   - name: TFEorg
+    required: true
   - name: TFEtoken
     required: true
   plugins:
